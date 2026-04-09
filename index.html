@@ -2,226 +2,904 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Petaluma Letter Prompt Builder</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LetterGPT</title>
+  <style>
+    :root {
+      --bg: #171717;
+      --panel: #262626;
+      --panel-2: #2b2b2b;
+      --border: #474747;
+      --text: #f5f5f5;
+      --muted: #b5b5b5;
+      --muted-2: #8a8a8a;
+      --accent: #d4d4d4;
+      --accent-bg: #303030;
+      --pill-active-bg: #303030;
+      --pill-active-border: #808080;
+      --focus: #7aa2e3;
+      --danger: #f87171;
+      --good: #86efac;
+    }
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f5f5f5;
-}
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.35;
+    }
 
-.container {
-  max-width: 1200px;
-  margin: auto;
-  padding: 20px;
-}
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 12px 12px 48px;
+    }
 
-h1 {
-  background: #1e293b;
-  color: white;
-  padding: 20px;
-  border-radius: 12px;
-}
+    .hero {
+      margin: 8px 4px 18px;
+      padding: 10px 8px 0;
+    }
 
-.section {
-  background: white;
-  padding: 15px;
-  margin-top: 15px;
-  border-radius: 12px;
-}
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
 
-label {
-  display: block;
-  margin-top: 10px;
-  font-weight: bold;
-}
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
 
-textarea, input, select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
+    .card {
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+      margin: 0 0 20px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    }
 
-button {
-  margin-top: 15px;
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #d0d0d0;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+    }
 
-.copy {
-  background: #1e293b;
-  color: white;
-}
+    .help {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: -4px;
+      margin-bottom: 14px;
+    }
 
-.output {
-  white-space: pre-wrap;
-  background: #eef;
-  padding: 15px;
-  border-radius: 12px;
-  margin-top: 20px;
-}
-</style>
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 14px 14px;
+    }
+
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .full { grid-column: 1 / -1; }
+
+    .field label,
+    .field .label {
+      display: block;
+      margin: 0 0 8px;
+      color: #cfcfcf;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .required::after {
+      content: " *";
+      color: #f28b82;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid #505050;
+      background: #2f2f2f;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 13px 16px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input::placeholder,
+    textarea::placeholder { color: #8f8f8f; }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 2px rgba(122,162,227,0.14);
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .subtext {
+      margin-top: 6px;
+      font-size: 0.88rem;
+      color: var(--muted-2);
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .pill {
+      appearance: none;
+      border: 1px solid #707070;
+      background: transparent;
+      color: #d4d4d4;
+      border-radius: 999px;
+      padding: 11px 18px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .pill:hover { background: #2c2c2c; }
+    .pill.active {
+      background: var(--pill-active-bg);
+      border-color: var(--pill-active-border);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1px solid #4f5f76;
+      background: #35507a;
+      color: #cfe2ff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .finding-card {
+      border: 1px solid #434343;
+      border-radius: 14px;
+      padding: 18px;
+      margin: 0 0 16px;
+      background: rgba(0,0,0,0.08);
+    }
+
+    .finding-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .finding-title {
+      font-weight: 800;
+      font-size: 1rem;
+    }
+
+    .scroll-cue {
+      width: 44px;
+      height: 44px;
+      margin: -10px auto 22px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #303030;
+      color: #c7c7c7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      user-select: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    button.action {
+      appearance: none;
+      border: 1px solid #606060;
+      background: #343434;
+      color: #f2f2f2;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.action.primary {
+      background: #f3f3f3;
+      color: #171717;
+      border-color: #f3f3f3;
+    }
+
+    button.action:hover { filter: brightness(1.05); }
+
+    .panel-output {
+      min-height: 320px;
+      border: 1px solid #505050;
+      background: #222;
+      color: #efefef;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 14px;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+
+    .status {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 820px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 1.7rem; }
+    }
+  </style>
 </head>
-
 <body>
-<div class="container">
+  <div class="page">
+    <div class="hero">
+      <h1>LetterGPT</h1>
+      <p>Intake rough facts and analysis, clean them, and build a strong AI prompt for Petaluma determination letters.</p>
+    </div>
 
-<h1>Petaluma Letter Prompt Builder</h1>
+    <form id="letterForm">
+      <section class="card">
+        <h2 class="section-title">Permit Type</h2>
+        <div class="pills" id="permitPills">
+          <button type="button" class="pill active" data-permit="Administrative SPAR">Administrative SPAR</button>
+          <button type="button" class="pill" data-permit="Minor CUP / MUP">Minor CUP / MUP</button>
+          <button type="button" class="pill" data-permit="Temporary Zoning Permit">Temporary Zoning Permit</button>
+          <button type="button" class="pill" data-permit="Zoning Verification Letter">Zoning Verification Letter</button>
+        </div>
+        <input type="hidden" id="permitType" value="Administrative SPAR" />
+      </section>
 
-<div class="section">
-<label>Permit Type</label>
-<select id="permitType">
-  <option>Administrative SPAR</option>
-  <option>Minor CUP</option>
-  <option>Temporary Zoning Permit</option>
-  <option>Zoning Verification Letter</option>
-</select>
+      <section class="card">
+        <h2 class="section-title">Applicant</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label class="required" for="applicantName">Applicant name</label>
+            <input id="applicantName" placeholder="Full name" />
+            <div class="subtext">AI will derive salutation from this name using first name only.</div>
+          </div>
+          <div class="field">
+            <label for="organization">Organization / firm</label>
+            <input id="organization" placeholder="Company or firm" />
+          </div>
+          <div class="field">
+            <label class="required" for="mailingAddress">Mailing address</label>
+            <input id="mailingAddress" placeholder="Street address" />
+          </div>
+          <div class="field">
+            <label class="required" for="cityStateZip">City, State ZIP</label>
+            <input id="cityStateZip" placeholder="Petaluma, CA 94952" />
+          </div>
+          <div class="field full">
+            <label class="required" for="email">Email</label>
+            <input id="email" placeholder="name@example.com" />
+          </div>
+        </div>
+      </section>
 
-<label>Decision Number</label>
-<input id="decisionNumber">
+      <div class="scroll-cue">↓</div>
 
-<label>Recipient Name</label>
-<input id="recipientName">
+      <section class="card">
+        <h2 class="section-title">Project Identification</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label class="required" for="projectName">Project name</label>
+            <input id="projectName" placeholder="Short project name" />
+          </div>
+          <div class="field">
+            <label class="required" for="projectAddress">Project address</label>
+            <input id="projectAddress" placeholder="701 E Washington St" />
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="field">
+            <label class="required" for="apn">APN</label>
+            <input id="apn" placeholder="007-052-035" />
+          </div>
+          <div class="field">
+            <label class="required" for="cityRecordNo">City Record No.</label>
+            <input id="cityRecordNo" placeholder="PLPJ-2026-0004" />
+          </div>
+          <div class="field">
+            <label class="required" for="permitRecordNos">Permit Record No(s).</label>
+            <input id="permitRecordNos" placeholder="PLSR-2026-0002" />
+          </div>
+        </div>
+      </section>
 
-<label>Site Address</label>
-<input id="siteAddress">
+      <section class="card">
+        <h2 class="section-title">Zoning &amp; General Plan</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label class="required" for="zoningDistrict">IZO zoning district</label>
+            <select id="zoningDistrict">
+              <option value="">— select —</option>
+              <optgroup label="Natural & Rural">
+                <option>OSP (Open Space Preserve)</option>
+                <option>AG (Agriculture)</option>
+                <option>RR (Rural Residential)</option>
+              </optgroup>
+              <optgroup label="Residential">
+                <option>R1 (Residential 1 — Very Low Density)</option>
+                <option>R2 (Residential 2 — Low Density)</option>
+                <option>R3 (Residential 3 — Downtown Neighborhoods)</option>
+                <option>R4 (Residential 4 — Medium Density)</option>
+                <option>R5 (Residential 5 — High Density)</option>
+              </optgroup>
+              <optgroup label="Commercial">
+                <option>C1 (Commercial 1 — Neighborhood Commercial)</option>
+                <option>C2 (Commercial 2 — Community/Regional Commercial)</option>
+              </optgroup>
+              <optgroup label="Mixed Use">
+                <option>MU1A (Mixed Use 1A)</option>
+                <option>MU1B (Mixed Use 1B)</option>
+                <option>MU1C (Mixed Use 1C — Residential)</option>
+                <option>MU2 (Mixed Use 2 — Auto-Oriented)</option>
+              </optgroup>
+              <optgroup label="Business Park & Industrial">
+                <option>BP (Business Park)</option>
+                <option>I (Industrial)</option>
+              </optgroup>
+              <optgroup label="Special Purpose">
+                <option>CF (Community Facilities)</option>
+                <option>Floodway</option>
+              </optgroup>
+              <optgroup label="Central Petaluma Specific Plan (SmartCode)">
+                <option>T3 — Sub-Urban (CPSP SmartCode)</option>
+                <option>T4 — General Urban (CPSP SmartCode)</option>
+                <option>T5 — Urban Center (CPSP SmartCode)</option>
+                <option>T6 — Urban Core (CPSP SmartCode)</option>
+                <option>SD — Special District (CPSP SmartCode)</option>
+              </optgroup>
+              <optgroup label="Planned Unit Developments (IZO Ch. 19)">
+                <option>East Washington Place PUD</option>
+                <option>Deer Creek Village PUD</option>
+                <option>Corona Reach PUD</option>
+                <option>Other PUD (specify in notes)</option>
+              </optgroup>
+              <optgroup label="Planned Community Developments (IZO Ch. 19)">
+                <option>Other PCD (specify in notes)</option>
+              </optgroup>
+            </select>
+            <div class="subtext">For PUD/PCD, note applicable development standards in additional notes below.</div>
+          </div>
+          <div class="field">
+            <label class="required" for="gpDesignation">General Plan 2025 land use designation</label>
+            <select id="gpDesignation">
+              <option value="">— select —</option>
+              <optgroup label="Residential">
+                <option>Very Low Density Residential</option>
+                <option>Low Density Residential</option>
+                <option>Diverse Low Density Residential</option>
+                <option>Medium Density Residential</option>
+                <option>High Density Residential</option>
+              </optgroup>
+              <optgroup label="Commercial">
+                <option>Neighborhood Commercial</option>
+                <option>Community Commercial</option>
+                <option>Regional Commercial</option>
+              </optgroup>
+              <optgroup label="Mixed Use">
+                <option>Mixed Use</option>
+                <option>Urban Mixed Use</option>
+                <option>Corridor Mixed Use</option>
+              </optgroup>
+              <optgroup label="Employment / Industrial">
+                <option>Business Park</option>
+                <option>Industrial</option>
+                <option>Light Industrial / Office</option>
+              </optgroup>
+              <optgroup label="Public / Open Space">
+                <option>Public / Semi-Public</option>
+                <option>Parks and Recreation</option>
+                <option>Open Space</option>
+                <option>Agriculture</option>
+              </optgroup>
+              <optgroup label="Central Petaluma Specific Plan">
+                <option>Central Petaluma Specific Plan — Mixed Use (CPSP)</option>
+                <option>Central Petaluma Specific Plan — Urban Core (CPSP)</option>
+                <option>Central Petaluma Specific Plan — Civic / Open Space (CPSP)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field">
+            <label for="overlayZone">IZO Chapter 5 overlay zone</label>
+            <select id="overlayZone">
+              <option>None</option>
+              <option>Historic District Overlay</option>
+              <option>Flood Plain Overlay</option>
+              <option>Theater District Overlay</option>
+              <option>Senior Mobile Home Park Overlay</option>
+              <option>Fairgrounds Overlay</option>
+              <option>Downtown Housing and Economic Opportunity Overlay</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="floodZone">Flood zone</label>
+            <select id="floodZone">
+              <option>None / outside flood zone</option>
+              <option>Flood Zone AE</option>
+              <option>Flood Zone AO</option>
+              <option>Floodway</option>
+              <option>Other (note below)</option>
+            </select>
+          </div>
+        </div>
+      </section>
 
-<label>APN</label>
-<input id="apn">
+      <div class="scroll-cue">↓</div>
 
-<label>Zoning</label>
-<input id="zoning">
+      <section class="card">
+        <h2 class="section-title">Project Description</h2>
+        <div class="grid-2">
+          <div class="field full">
+            <label class="required" for="existingConditions">Existing site conditions</label>
+            <textarea id="existingConditions" placeholder="Rough notes are fine."></textarea>
+          </div>
+          <div class="field full">
+            <label class="required" for="proposedDescription">Proposed project description</label>
+            <textarea id="proposedDescription" placeholder="Include what is NOT being changed — anchors all no-change findings per Andrew's guidance."></textarea>
+          </div>
+          <div class="field">
+            <label for="modificationStatus">Modification to a previously approved project?</label>
+            <select id="modificationStatus">
+              <option>No — new project</option>
+              <option>Yes — modification to prior approval</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="required" for="priorPermit">Prior permit no. and approval date</label>
+            <input id="priorPermit" placeholder="PLSR-2016-0030" />
+          </div>
+        </div>
+      </section>
 
-<label>General Plan</label>
-<input id="gp">
+      <section class="card">
+        <h2 class="section-title">CEQA</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label class="required" for="ceqaExemption">Applicable exemption</label>
+            <select id="ceqaExemption">
+              <option value="">— select —</option>
+              <option>§15301 Class 1 — Existing Facilities</option>
+              <option>§15302 Class 2 — Replacement or Reconstruction</option>
+              <option>§15303 Class 3 — New Construction / Small Structures</option>
+              <option>§15304 Class 4 — Minor Alterations to Land</option>
+              <option>§15305 Class 5 — Minor Alterations in Land Use Limitations</option>
+              <option>§15061(b)(3) — Common Sense Exemption</option>
+              <option>Other (describe in notes)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ceqaRationale">Exemption rationale (brief)</label>
+            <input id="ceqaRationale" placeholder="e.g. minor alterations to existing facility, no expansion of use" />
+          </div>
+        </div>
+      </section>
 
-<label>Overlay</label>
-<input id="overlay">
-</div>
+      <section class="card" id="sparFindingsSection">
+        <h2 class="section-title">SPAR Findings — IZO §24.050.E</h2>
+        <p class="help">Enter analysis for each finding. Leave blank to auto-generate a no-change affirmative finding. Finding 1 is typically the only substantive finding needed for minor modifications.</p>
 
-<div class="section">
-<label>Project Description (rough)</label>
-<textarea id="desc"></textarea>
+        <div class="finding-card">
+          <div class="finding-head">
+            <div class="finding-title">Finding 1 — Design, materials &amp; architectural compatibility</div>
+            <span class="badge">Substantive analysis recommended</span>
+          </div>
+          <textarea id="finding1" placeholder="Architectural style, materials, colors, finishes, compatibility with building and neighborhood character..."></textarea>
+        </div>
 
-<label>Existing Site (rough)</label>
-<textarea id="existing"></textarea>
+        <div class="finding-card">
+          <div class="finding-head">
+            <div class="finding-title">Finding 2 — Landscaping</div>
+            <span class="badge" style="background:#2f2f2f;border-color:#555;color:#d6d6d6;">Auto no-change if blank</span>
+          </div>
+          <textarea id="finding2" placeholder="Leave blank for auto no-change finding, or enter analysis if landscaping is affected..."></textarea>
+        </div>
 
-<label>Proposed Work (rough)</label>
-<textarea id="work"></textarea>
+        <div class="finding-card">
+          <div class="finding-head">
+            <div class="finding-title">Finding 3 — Circulation, access &amp; parking</div>
+            <span class="badge" style="background:#2f2f2f;border-color:#555;color:#d6d6d6;">Auto no-change if blank</span>
+          </div>
+          <textarea id="finding3" placeholder="Leave blank for auto no-change finding, or enter analysis if access/parking is affected..."></textarea>
+        </div>
 
-<label>Public Notice (rough)</label>
-<textarea id="notice"></textarea>
+        <div class="finding-card">
+          <div class="finding-head">
+            <div class="finding-title">Finding 4 — Design quality &amp; professional preparation</div>
+            <span class="badge" style="background:#2f2f2f;border-color:#555;color:#d6d6d6;">Auto if blank</span>
+          </div>
+          <textarea id="finding4" placeholder="Leave blank for standard auto-finding, or note specifics about the design professional..."></textarea>
+        </div>
 
-<label>CEQA (rough)</label>
-<textarea id="ceqa"></textarea>
+        <div class="finding-card">
+          <div class="finding-head">
+            <div class="finding-title">Finding 5 — CEQA</div>
+            <span class="badge" style="background:#2f2f2f;border-color:#555;color:#d6d6d6;">Auto from CEQA section</span>
+          </div>
+          <textarea id="finding5" placeholder="Leave blank — auto-generated from CEQA exemption above. Add supplemental notes if needed..."></textarea>
+        </div>
 
-<label>Conditions (rough)</label>
-<textarea id="conditions"></textarea>
-</div>
+        <div class="finding-card">
+          <div class="finding-head">
+            <div class="finding-title">Finding 6 — Zoning Ordinance &amp; General Plan conformance</div>
+            <span class="badge" style="background:#2f2f2f;border-color:#555;color:#d6d6d6;">Auto if blank</span>
+          </div>
+          <textarea id="finding6" placeholder="Use for use classification, GP consistency, PUD/PCD or area-specific standards, or other zoning conformity analysis..."></textarea>
+        </div>
+      </section>
 
-<div class="section">
-<h3>Findings (rough input)</h3>
+      <section class="card hidden" id="cupFindingsSection">
+        <h2 class="section-title">Minor CUP / MUP Findings</h2>
+        <p class="help">Enter rough analysis for each required CUP finding. The final AI prompt will clean and rewrite it.</p>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 1 — Public health, safety, peace, comfort, and welfare</div></div><textarea id="cup1"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 2 — No detriment to property and improvements</div></div><textarea id="cup2"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 3 — General Plan / specific plan consistency</div></div><textarea id="cup3"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 4 — Zoning district and ordinance compliance</div></div><textarea id="cup4"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 5 — Physical suitability of the site</div></div><textarea id="cup5"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 6 — Compatibility with nearby land uses</div></div><textarea id="cup6"></textarea></div>
+      </section>
 
-<textarea id="f1" placeholder="Finding 1"></textarea>
-<textarea id="f2" placeholder="Finding 2"></textarea>
-<textarea id="f3" placeholder="Finding 3"></textarea>
-<textarea id="f4" placeholder="Finding 4"></textarea>
-<textarea id="f5" placeholder="Finding 5"></textarea>
-<textarea id="f6" placeholder="Finding 6"></textarea>
-</div>
+      <section class="card hidden" id="tzpFindingsSection">
+        <h2 class="section-title">Temporary Zoning Permit Findings</h2>
+        <div class="grid-2">
+          <div class="field full">
+            <label class="required" for="tzpDates">Authorized dates / hours</label>
+            <textarea id="tzpDates" placeholder="June 1 through June 30, daily 10 AM to 8 PM"></textarea>
+          </div>
+        </div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 1 — Compatibility with site and area</div></div><textarea id="tzp1"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 2 — No undue traffic, noise, safety, or nuisance impacts</div></div><textarea id="tzp2"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 3 — Site can accommodate activity with conditions</div></div><textarea id="tzp3"></textarea></div>
+        <div class="finding-card"><div class="finding-head"><div class="finding-title">Finding 4 — Consistency with zoning regulations</div></div><textarea id="tzp4"></textarea></div>
+      </section>
 
-<button class="copy" onclick="generatePrompt()">Generate Prompt</button>
+      <section class="card hidden" id="zvSection">
+        <h2 class="section-title">Zoning Verification Letter</h2>
+        <div class="grid-2">
+          <div class="field full">
+            <label class="required" for="zvQuestion">Verification question</label>
+            <textarea id="zvQuestion" placeholder="What zoning question is being answered?"></textarea>
+          </div>
+          <div class="field full">
+            <label for="zvNotes">Verification notes</label>
+            <textarea id="zvNotes" placeholder="Permit history, use status, violations, approvals on file, etc."></textarea>
+          </div>
+        </div>
+      </section>
 
-<div id="output" class="output"></div>
+      <div class="scroll-cue">↓</div>
 
-</div>
+      <section class="card">
+        <h2 class="section-title">Staff, Notice &amp; Conditions</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label class="required" for="reviewer">Planning reviewer (name and title)</label>
+            <input id="reviewer" placeholder="Peter Kaljina, Associate Planner" />
+          </div>
+          <div class="field">
+            <label class="required" for="reviewerEmail">Reviewer email</label>
+            <input id="reviewerEmail" placeholder="PKaljian@CityofPetaluma.org" />
+          </div>
+          <div class="field">
+            <label for="noticeOutcome">Public notice outcome</label>
+            <select id="noticeOutcome">
+              <option>No comments received</option>
+              <option>Comments received and addressed</option>
+              <option>No public notice required</option>
+              <option>Other (note below)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="buildingContact">Building Division contact</label>
+            <input id="buildingContact" value="Charles Lucas, Deputy Chief Building Official" />
+          </div>
+          <div class="field full">
+            <label for="conditionsNotes">Project-specific conditions notes</label>
+            <textarea id="conditionsNotes" placeholder="Materials/colors, signage restrictions, cultural resources trigger, outdoor storage, fee timing, PUD/PCD-specific standards..."></textarea>
+          </div>
+          <div class="field full">
+            <label for="additionalNotes">Additional context / notes</label>
+            <textarea id="additionalNotes" placeholder="Unusual circumstances, GP policies to cite, prior approvals, PUD performance standards, language preferences..."></textarea>
+          </div>
+        </div>
+      </section>
 
-<script>
-function clean(text) {
-  if (!text) return "";
-  return text
-    .replace(/\s+/g, " ")
-    .replace(/\bteh\b/gi, "the")
-    .replace(/\bprojec?t\b/gi, "project")
-    .trim();
-}
+      <section class="card">
+        <h2 class="section-title">Prompt Output</h2>
+        <div class="actions">
+          <button type="button" class="action primary" id="generateBtn">Generate Prompt</button>
+          <button type="button" class="action" id="copyBtn">Copy Prompt</button>
+          <button type="button" class="action" id="downloadBtn">Download .txt</button>
+        </div>
+        <div class="status" id="statusText">Fill out the form, then generate the AI-ready prompt.</div>
+        <pre class="panel-output" id="promptOutput"></pre>
+      </section>
+    </form>
+  </div>
 
-function generatePrompt() {
-  const permit = document.getElementById("permitType").value;
+  <script>
+    const permitPills = document.querySelectorAll('.pill');
+    const permitInput = document.getElementById('permitType');
+    const sparSection = document.getElementById('sparFindingsSection');
+    const cupSection = document.getElementById('cupFindingsSection');
+    const tzpSection = document.getElementById('tzpFindingsSection');
+    const zvSection = document.getElementById('zvSection');
+    const output = document.getElementById('promptOutput');
+    const statusText = document.getElementById('statusText');
 
-  const prompt = `
-You are drafting a City of Petaluma determination letter.
+    function setPermitType(value) {
+      permitInput.value = value;
+      permitPills.forEach(btn => btn.classList.toggle('active', btn.dataset.permit === value));
+      sparSection.classList.toggle('hidden', value !== 'Administrative SPAR');
+      cupSection.classList.toggle('hidden', value !== 'Minor CUP / MUP');
+      tzpSection.classList.toggle('hidden', value !== 'Temporary Zoning Permit');
+      zvSection.classList.toggle('hidden', value !== 'Zoning Verification Letter');
+    }
 
-Follow these rules strictly:
-- Clean all input for grammar and spelling
-- Use professional municipal tone (Andrew-style)
-- Include CEQA and Public Notice EVERY TIME
-- Include ONLY required findings (no extra)
-- Use concise no-change logic where appropriate
-- Do not invent facts
-- Output a complete finished letter only
+    permitPills.forEach(btn => {
+      btn.addEventListener('click', () => setPermitType(btn.dataset.permit));
+    });
 
-LETTER STRUCTURE:
-1. Intro paragraph
-2. Project Description
-3. Public Notice
-4. Findings
-5. CEQA
-6. Conditions
-7. Appeal/Validity
-8. Signature
+    function getValue(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    }
 
-PROJECT DATA:
-- Permit Type: ${permit}
-- Decision #: ${document.getElementById("decisionNumber").value}
-- Recipient: ${document.getElementById("recipientName").value}
-- Site Address: ${document.getElementById("siteAddress").value}
-- APN: ${document.getElementById("apn").value}
-- Zoning: ${document.getElementById("zoning").value}
-- General Plan: ${document.getElementById("gp").value}
-- Overlay: ${document.getElementById("overlay").value}
+    function cleanText(text) {
+      if (!text) return '';
+      return text
+        .replace(/[\t\u00A0]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/\s+([,.;:!?])/g, '$1')
+        .replace(/([,.;:!?])(\S)/g, '$1 $2')
+        .replace(/\bteh\b/gi, 'the')
+        .replace(/\bexistign\b/gi, 'existing')
+        .replace(/\bpermti\b/gi, 'permit')
+        .replace(/\bwoudl\b/gi, 'would')
+        .replace(/\bshoudl\b/gi, 'should')
+        .replace(/\bprojec?t\b/gi, 'project')
+        .replace(/\brecnet\b/gi, 'recent')
+        .replace(/\bguidanec\b/gi, 'guidance')
+        .replace(/\bimipmeted\b/gi, 'implemented')
+        .replace(/\bresturant\b/gi, 'restaurant')
+        .replace(/\bapplicaiton\b/gi, 'application')
+        .replace(/\bapplicaition\b/gi, 'application')
+        .replace(/\bparkgin\b/gi, 'parking')
+        .replace(/\bsdo\b/gi, 'so')
+        .trim();
+    }
 
-CLEAN AND USE THIS INPUT:
+    function paragraph(text, fallback = '[⚠ GAP: add information]') {
+      const cleaned = cleanText(text);
+      return cleaned || fallback;
+    }
 
-Project Description:
-${clean(document.getElementById("desc").value)}
+    function getFindingsBlock() {
+      const permit = getValue('permitType');
+      if (permit === 'Administrative SPAR') {
+        return [
+          ['Finding 1 — Design, materials & architectural compatibility', getValue('finding1')],
+          ['Finding 2 — Landscaping', getValue('finding2')],
+          ['Finding 3 — Circulation, access & parking', getValue('finding3')],
+          ['Finding 4 — Design quality & professional preparation', getValue('finding4')],
+          ['Finding 5 — CEQA', getValue('finding5')],
+          ['Finding 6 — Zoning Ordinance & General Plan conformance', getValue('finding6')],
+        ].map(([label, value]) => `- ${label}: ${paragraph(value, '[Leave blank if no-change finding should be auto-drafted.]')}`).join('\n');
+      }
+      if (permit === 'Minor CUP / MUP') {
+        return [
+          ['Finding 1 — Public health, safety, peace, comfort, and welfare', getValue('cup1')],
+          ['Finding 2 — No detriment to property and improvements', getValue('cup2')],
+          ['Finding 3 — General Plan / specific plan consistency', getValue('cup3')],
+          ['Finding 4 — Zoning district and ordinance compliance', getValue('cup4')],
+          ['Finding 5 — Physical suitability of the site', getValue('cup5')],
+          ['Finding 6 — Compatibility with nearby land uses', getValue('cup6')],
+        ].map(([label, value]) => `- ${label}: ${paragraph(value)}`).join('\n');
+      }
+      if (permit === 'Temporary Zoning Permit') {
+        return [
+          ['Finding 1 — Compatibility with site and area', getValue('tzp1')],
+          ['Finding 2 — No undue traffic, noise, safety, or nuisance impacts', getValue('tzp2')],
+          ['Finding 3 — Site can accommodate activity with conditions', getValue('tzp3')],
+          ['Finding 4 — Consistency with zoning regulations', getValue('tzp4')],
+        ].map(([label, value]) => `- ${label}: ${paragraph(value)}`).join('\n');
+      }
+      return '- No findings section applies in the same format for a zoning verification letter.';
+    }
 
-Existing Site:
-${clean(document.getElementById("existing").value)}
+    function permitSpecificInstructions(permit) {
+      if (permit === 'Administrative SPAR') {
+        return `Administrative SPAR instructions:\n- Include exactly 6 findings, no more and no less.\n- Use concise no-change logic where a finding is not materially affected by the proposal.\n- Existing facilities context should be addressed where relevant.\n- If overlay or area-specific standards apply, discuss them briefly and accurately.\n- Finding 1 is often the primary substantive finding for small modifications; do not over-write the other findings if they are unchanged.`;
+      }
+      if (permit === 'Minor CUP / MUP') {
+        return `Minor CUP / MUP instructions:\n- Include exactly 6 findings, no more and no less.\n- Clearly state what land use is being authorized at this location.\n- Focus on site suitability, compatibility, and consistency with the zoning district and General Plan.\n- Keep the analysis precise and entitlement-specific.`;
+      }
+      if (permit === 'Temporary Zoning Permit') {
+        return `Temporary Zoning Permit instructions:\n- Include exactly 4 findings, no more and no less.\n- Clearly state the temporary activity, dates, hours, and key limits.\n- Keep the letter tighter than a CUP or SPAR letter.\n- Conditions should be practical and tied to the temporary activity.`;
+      }
+      return `Zoning Verification Letter instructions:\n- This is an informational letter, not a discretionary approval.\n- Clearly answer the verification question asked.\n- State zoning, General Plan designation, and any relevant permit history if provided.\n- Do not present this as an entitlement approval.`;
+    }
 
-Proposed Work:
-${clean(document.getElementById("work").value)}
+    function outputSequence(permit) {
+      if (permit === 'Zoning Verification Letter') {
+        return `Required output sequence:\n1. Date\n2. Recipient block\n3. Salutation using first name\n4. Opening paragraph stating the purpose of the zoning verification response\n5. Property identification paragraph with address, APN, zoning, General Plan designation, and overlay if applicable\n6. Direct response to the zoning verification question\n7. Additional permit or file history discussion if provided\n8. CEQA / informational status paragraph\n9. Limitations / informational nature paragraph\n10. Signature block`;
+      }
+      return `Required output sequence:\n1. Date\n2. Recipient block\n3. Salutation using first name\n4. Introductory approval paragraph identifying the City determination, permit type, site address, and file number\n5. Project Description section\n6. Public Notice section\n7. Planning Review Considerations or Standards for Review section if appropriate\n8. Findings section with the exact required number of findings for the selected permit type\n9. CEQA section\n10. Conditions of Approval section if conditions are supplied or clearly needed\n11. Appeal and Validity section\n12. Signature block`;
+    }
 
-Public Notice:
-${clean(document.getElementById("notice").value)}
+    function buildPrompt() {
+      const permit = getValue('permitType');
+      const prompt = `You are drafting a City of Petaluma ministerial or administrative determination letter.
 
-CEQA:
-${clean(document.getElementById("ceqa").value)}
+Your job:
+1. Clean the user’s rough input for spelling, grammar, punctuation, and sentence flow.
+2. Use the cleaned content to draft a polished final letter.
+3. Follow the office guidance, template logic, and example-based writing style described below.
+4. Write like a careful municipal planner. Use complete sentences, consistent formatting, and professional tone.
+5. Do not invent project facts. If information is missing, insert a visible bracketed gap flag like [⚠ GAP: describe missing item].
+6. Treat each permit type as separate and include the required findings for that permit type, no more and no less.
+7. Include CEQA every time, even if brief.
+8. Public notice should be addressed every time.
+9. Existing facilities / existing development context should be addressed every time when relevant to the project.
+10. If a finding is not substantively changed by the proposal, use concise no-change logic rather than bloated analysis.
+11. The final result must read like a finished City letter, not like notes, a memo, or an AI outline.
 
-Conditions:
-${clean(document.getElementById("conditions").value)}
+Andrew-style tone and drafting expectations:
+- Write in a polished municipal planning voice: calm, precise, professional, and direct.
+- Keep sentences complete and grammatically clean.
+- Do not write like marketing copy, generic AI prose, or bloated legal boilerplate.
+- Start with what is being proposed, then describe the site, then the project details.
+- Prefer measured statements like “The project site is developed with…”, “The proposed project would…”, and “The predominant development pattern in the area consists of…”.
+- Keep findings right-sized. Review should focus on judgment and policy issues, not grammar, formatting, or omissions.
+- Where the proposal modifies an existing facility or continues an established use, say so clearly and early when relevant.
+- If a condition or factual point matters, say it plainly.
 
-FINDINGS:
-1. ${clean(document.getElementById("f1").value)}
-2. ${clean(document.getElementById("f2").value)}
-3. ${clean(document.getElementById("f3").value)}
-4. ${clean(document.getElementById("f4").value)}
-5. ${clean(document.getElementById("f5").value)}
-6. ${clean(document.getElementById("f6").value)}
+${permitSpecificInstructions(permit)}
 
-Now draft the final letter.
-`;
+${outputSequence(permit)}
 
-  document.getElementById("output").innerText = prompt;
-}
-</script>
+General drafting rules:
+- Start the project description with what is being proposed.
+- Briefly describe the site: parcel count, acreage if known, whether vacant or developed, and overlay if applicable.
+- Then describe the project details: square footage, buildings, operational characteristics, onsite/offsite improvements, landscape changes, parking, tree or environmental issues, or other notable attributes.
+- Use elevated but clear planning writing.
+- Keep the letter internally consistent in formatting, dates, permit number, and terminology.
+- Avoid overclaiming or stating facts not provided.
+- Do not use “N/A” in findings.
+- Where PUD, PCD, or area-specific planning standards may apply, note that project-specific standards must also be considered.
+- If rough user text is awkward, rewrite it fully into clean professional prose rather than lightly editing it.
+- Conditions should be formatted as a numbered list when present.
+- If conditions are not supplied but clearly needed, insert [⚠ GAP: conditions of approval].
 
+Permit type:
+${permit}
+
+Core project data:
+- Applicant name: ${paragraph(getValue('applicantName'), '[⚠ GAP: applicant name]')}
+- Organization / firm: ${paragraph(getValue('organization'), '[none provided]')}
+- Mailing address: ${paragraph(getValue('mailingAddress'), '[⚠ GAP: mailing address]')}
+- City, State ZIP: ${paragraph(getValue('cityStateZip'), '[⚠ GAP: city, state zip]')}
+- Applicant email: ${paragraph(getValue('email'), '[⚠ GAP: email]')}
+- Project name: ${paragraph(getValue('projectName'), '[⚠ GAP: project name]')}
+- Project address: ${paragraph(getValue('projectAddress'), '[⚠ GAP: project address]')}
+- APN: ${paragraph(getValue('apn'), '[⚠ GAP: APN]')}
+- City Record No.: ${paragraph(getValue('cityRecordNo'), '[⚠ GAP: city record number]')}
+- Permit Record No(s).: ${paragraph(getValue('permitRecordNos'), '[⚠ GAP: permit record numbers]')}
+- IZO zoning district: ${paragraph(getValue('zoningDistrict'), '[⚠ GAP: zoning district]')}
+- General Plan designation: ${paragraph(getValue('gpDesignation'), '[⚠ GAP: General Plan designation]')}
+- Overlay zone: ${paragraph(getValue('overlayZone'), 'None')}
+- Flood zone: ${paragraph(getValue('floodZone'), 'None / outside flood zone')}
+- Modification to previously approved project?: ${paragraph(getValue('modificationStatus'), 'No — new project')}
+- Prior permit no. and approval date: ${paragraph(getValue('priorPermit'), '[none provided]')}
+- CEQA exemption: ${paragraph(getValue('ceqaExemption'), '[⚠ GAP: CEQA exemption]')}
+- CEQA rationale: ${paragraph(getValue('ceqaRationale'), '[⚠ GAP: CEQA rationale]')}
+- Reviewer: ${paragraph(getValue('reviewer'), '[⚠ GAP: reviewer name/title]')}
+- Reviewer email: ${paragraph(getValue('reviewerEmail'), '[⚠ GAP: reviewer email]')}
+- Public notice outcome: ${paragraph(getValue('noticeOutcome'), '[⚠ GAP: public notice outcome]')}
+- Building Division contact: ${paragraph(getValue('buildingContact'), 'Charles Lucas, Deputy Chief Building Official')}
+
+Rough user inputs to clean and use:
+- Existing site conditions: ${paragraph(getValue('existingConditions'), '[⚠ GAP: existing site conditions]')}
+- Proposed project description: ${paragraph(getValue('proposedDescription'), '[⚠ GAP: proposed project description]')}
+- Project-specific conditions notes: ${paragraph(getValue('conditionsNotes'), '[none provided]')}
+- Additional context / notes: ${paragraph(getValue('additionalNotes'), '[none provided]')}
+
+Required finding analyses to clean and use:
+${getFindingsBlock()}
+
+Permit-specific details:
+- Temporary dates / hours: ${paragraph(getValue('tzpDates'), '[none provided]')}
+- Zoning verification question: ${paragraph(getValue('zvQuestion'), '[none provided]')}
+- Zoning verification notes: ${paragraph(getValue('zvNotes'), '[none provided]')}
+
+Now draft the final polished letter. Output the final letter only.`;
+      return prompt;
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      const prompt = buildPrompt();
+      output.textContent = prompt;
+      statusText.textContent = 'Prompt generated. Copy it into ChatGPT to draft the letter.';
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const text = output.textContent.trim();
+      if (!text) {
+        statusText.textContent = 'Generate the prompt first.';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        statusText.textContent = 'Prompt copied to clipboard.';
+      } catch {
+        statusText.textContent = 'Copy failed. You can still select and copy manually.';
+      }
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const text = output.textContent.trim();
+      if (!text) {
+        statusText.textContent = 'Generate the prompt first.';
+        return;
+      }
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lettergpt_prompt.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      statusText.textContent = 'Prompt downloaded as .txt.';
+    });
+
+    setPermitType('Administrative SPAR');
+  </script>
 </body>
 </html>
